@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <title>BowSense AI</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #07111f;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 520px;
+      padding: 32px 22px;
+    }
+
+    .brand {
+      text-align: center;
+      margin-top: 35px;
+      margin-bottom: 35px;
+    }
+
+    .logo {
+      font-size: 55px;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 34px;
+      letter-spacing: 1px;
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      color: #a9b7c8;
+      font-size: 17px;
+    }
+
+    .tagline {
+      margin-top: 16px;
+      color: #57d6a0;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+
+    .card {
+      background: #101d2d;
+      border: 1px solid #26384d;
+      border-radius: 20px;
+      padding: 20px;
+      margin-top: 25px;
+    }
+
+    .card h2 {
+      font-size: 19px;
+      margin-top: 0;
+    }
+
+    .card p {
+      color: #a9b7c8;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #0b1624;
+      padding: 14px;
+      border-radius: 12px;
+      margin: 18px 0;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #57d6a0;
+      box-shadow: 0 0 10px #57d6a0;
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 17px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: #57d6a0;
+      color: #06120d;
+    }
+
+    .camera-box {
+      display: none;
+      margin-top: 20px;
+      border-radius: 18px;
+      overflow: hidden;
+      background: black;
+      position: relative;
+    }
+
+    video {
+      width: 100%;
+      display: block;
+    }
+
+    .camera-label {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(0,0,0,.65);
+      padding: 8px 11px;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+
+    .footer {
+      text-align: center;
+      color: #607086;
+      font-size: 12px;
+      margin-top: 35px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="brand">
+    <div class="logo">🏹</div>
+
+    <h1>BOWSENSE AI</h1>
+
+    <div class="subtitle">
+      Personal Archery Coach
+    </div>
+
+    <div class="tagline">
+      SEE • ANALYZE • TRAIN • IMPROVE
+    </div>
+  </div>
+
+
+  <div class="card">
+
+    <h2>Demo Prototype</h2>
+
+    <p>
+      Langkah pertama adalah memastikan BowSense AI
+      boleh menggunakan kamera telefon anda.
+    </p>
+
+    <div class="status">
+      <div class="dot"></div>
+      <span id="statusText">Sistem sedia untuk ujian</span>
+    </div>
+
+    <button
+      class="primary"
+      id="cameraButton">
+      AKTIFKAN KAMERA
+    </button>
+
+    <div class="camera-box" id="cameraBox">
+
+      <video
+        id="camera"
+        autoplay
+        playsinline
+        muted>
+      </video>
+
+      <div class="camera-label">
+        ● BOWSENSE CAMERA
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="footer">
+    BowSense AI • Demo Prototype
+  </div>
+
+</div>
+
+
+<script>
+
+const cameraButton =
+  document.getElementById("cameraButton");
+
+const camera =
+  document.getElementById("camera");
+
+const cameraBox =
+  document.getElementById("cameraBox");
+
+const statusText =
+  document.getElementById("statusText");
+
+
+cameraButton.addEventListener("click", async () => {
+
+  statusText.textContent =
+    "Meminta akses kamera...";
+
+  try {
+
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+
+        video: {
+          facingMode: {
+            ideal: "environment"
+          },
+
+          width: {
+            ideal: 1280
+          },
+
+          height: {
+            ideal: 720
+          }
+        },
+
+        audio: false
+      });
+
+
+    camera.srcObject = stream;
+
+    cameraBox.style.display = "block";
+
+    statusText.textContent =
+      "Kamera aktif ✓";
+
+    cameraButton.textContent =
+      "KAMERA AKTIF";
+
+    cameraButton.disabled = true;
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    statusText.textContent =
+      "Kamera tidak dapat diaktifkan";
+
+    alert(
+      "BowSense AI memerlukan kebenaran kamera. " +
+      "Sila benarkan akses kamera dalam browser."
+    );
+
+  }
+
+});
+
+</script>
+
+</body>
+</html>
