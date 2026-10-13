@@ -1,250 +1,185 @@
 <!DOCTYPE html>
 <html lang="ms">
 <head>
-  <meta charset="UTF-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>BowSense AI — Archery Form Analysis</title>
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-  >
+<style>
+* { box-sizing: border-box; }
 
-  <title>BowSense AI</title>
+body {
+  margin: 0;
+  background: #07111f;
+  color: white;
+  font-family: Arial, sans-serif;
+}
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+.app {
+  max-width: 650px;
+  margin: auto;
+  padding: 25px 18px 50px;
+}
 
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #07111f;
-      color: white;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-    }
+.brand {
+  text-align: center;
+  padding: 25px 0;
+}
 
-    .app {
-      width: 100%;
-      max-width: 520px;
-      padding: 32px 22px;
-    }
+.logo { font-size: 48px; }
 
-    .brand {
-      text-align: center;
-      margin-top: 35px;
-      margin-bottom: 35px;
-    }
+h1 {
+  margin: 10px 0;
+  font-size: 32px;
+}
 
-    .logo {
-      font-size: 55px;
-      margin-bottom: 10px;
-    }
+.subtitle { color: #a9b7c8; }
 
-    h1 {
-      margin: 0;
-      font-size: 34px;
-      letter-spacing: 1px;
-    }
+.tagline {
+  color: #57d6a0;
+  font-size: 12px;
+  letter-spacing: 2px;
+  margin-top: 15px;
+}
 
-    .subtitle {
-      margin-top: 8px;
-      color: #a9b7c8;
-      font-size: 17px;
-    }
+.card {
+  background: #101d2d;
+  border: 1px solid #26384d;
+  border-radius: 20px;
+  padding: 20px;
+  margin-top: 20px;
+}
 
-    .tagline {
-      margin-top: 16px;
-      color: #57d6a0;
-      font-size: 13px;
-      font-weight: bold;
-      letter-spacing: 2px;
-    }
+h2 {
+  margin-top: 0;
+  font-size: 20px;
+}
 
-    .card {
-      background: #101d2d;
-      border: 1px solid #26384d;
-      border-radius: 20px;
-      padding: 20px;
-      margin-top: 25px;
-    }
+.description {
+  color: #a9b7c8;
+  line-height: 1.6;
+  font-size: 14px;
+}
 
-    .card h2 {
-      font-size: 19px;
-      margin-top: 0;
-    }
+.status {
+  background: #071625;
+  padding: 15px;
+  border-radius: 12px;
+  margin: 20px 0;
+  color: #57d6a0;
+}
 
-    .card p {
-      color: #a9b7c8;
-      line-height: 1.5;
-      font-size: 14px;
-    }
+button {
+  width: 100%;
+  border: none;
+  border-radius: 13px;
+  padding: 17px;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+}
 
-    .status {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: #0b1624;
-      padding: 14px;
-      border-radius: 12px;
-      margin: 18px 0;
-    }
+.primary {
+  background: #57d6a0;
+  color: #07111f;
+}
 
-    .dot {
-      width: 11px;
-      height: 11px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      background: #57d6a0;
-      box-shadow: 0 0 10px #57d6a0;
-    }
+.secondary {
+  background: #26384d;
+  color: white;
+  margin-top: 10px;
+}
 
-    .dot.warning {
-      background: #ffc857;
-      box-shadow: 0 0 10px #ffc857;
-    }
+.cameraBox {
+  position: relative;
+  margin-top: 20px;
+  background: black;
+  border-radius: 18px;
+  overflow: hidden;
+  display: none;
+}
 
-    .dot.error {
-      background: #ff6b6b;
-      box-shadow: 0 0 10px #ff6b6b;
-    }
+video {
+  width: 100%;
+  display: block;
+}
 
-    button {
-      width: 100%;
-      border: none;
-      border-radius: 14px;
-      padding: 17px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
 
-    .primary {
-      background: #57d6a0;
-      color: #06120d;
-    }
+.cameraLabel {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: #000a;
+  border-radius: 20px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
 
-    .primary:disabled {
-      opacity: 0.65;
-      cursor: default;
-    }
+.aiLabel {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #000a;
+  color: #57d6a0;
+  border-radius: 20px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
 
-    /* ============================
-       CAMERA
-       ============================ */
+.result {
+  background: #071625;
+  border: 1px solid #26384d;
+  border-radius: 15px;
+  padding: 18px;
+  margin-top: 18px;
+}
 
-    .camera-box {
-      display: none;
-      margin-top: 20px;
-      border-radius: 18px;
-      overflow: hidden;
-      background: black;
-      position: relative;
-    }
+.result h3 {
+  color: #57d6a0;
+  margin-top: 0;
+}
 
-    #camera {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 12px 0;
+  border-bottom: 1px solid #203044;
+  font-size: 14px;
+}
 
-    #poseCanvas {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-    }
+.row:last-child { border-bottom: none; }
 
-    .camera-label {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      z-index: 5;
-      background: rgba(0, 0, 0, 0.65);
-      padding: 8px 11px;
-      border-radius: 20px;
-      font-size: 12px;
-    }
+.value {
+  font-weight: bold;
+  text-align: right;
+}
 
-    .ai-label {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      z-index: 5;
-      background: rgba(0, 0, 0, 0.65);
-      padding: 8px 11px;
-      border-radius: 20px;
-      font-size: 12px;
-      color: #57d6a0;
-    }
+.good { color: #57d6a0; }
+.warn { color: #ffc46b; }
+.muted { color: #a9b7c8; }
 
-    /* ============================
-       SMART SETUP PANEL
-       ============================ */
+.notice {
+  color: #a9b7c8;
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 15px;
+}
 
-    .setup-panel {
-      display: none;
-      margin-top: 15px;
-      padding: 16px;
-      border-radius: 14px;
-      background: #0b1624;
-      border: 1px solid #26384d;
-    }
-
-    .setup-title {
-      font-weight: bold;
-      color: #57d6a0;
-      margin-bottom: 12px;
-    }
-
-    .setup-message {
-      font-size: 15px;
-      font-weight: bold;
-      line-height: 1.4;
-      margin-bottom: 14px;
-    }
-
-    .check-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 15px;
-      padding: 9px 0;
-      border-top: 1px solid #1b2b3e;
-      font-size: 13px;
-    }
-
-    .check-name {
-      color: #a9b7c8;
-    }
-
-    .check-value {
-      font-weight: bold;
-      text-align: right;
-    }
-
-    .good {
-      color: #57d6a0;
-    }
-
-    .warn {
-      color: #ffc857;
-    }
-
-    .bad {
-      color: #ff6b6b;
-    }
-
-    .footer {
-      text-align: center;
-      color: #607086;
-      font-size: 12px;
-      margin-top: 35px;
-    }
-  </style>
+.footer {
+  text-align: center;
+  color: #607086;
+  margin-top: 30px;
+  font-size: 12px;
+}
+</style>
 </head>
 
 <body>
@@ -252,175 +187,112 @@
 <div class="app">
 
   <div class="brand">
-
     <div class="logo">🏹</div>
-
     <h1>BOWSENSE AI</h1>
-
-    <div class="subtitle">
-      Personal Archery Coach
-    </div>
-
-    <div class="tagline">
-      SEE • ANALYZE • TRAIN • IMPROVE
-    </div>
-
+    <div class="subtitle">Personal Archery Coach</div>
+    <div class="tagline">SEE • ANALYZE • TRAIN • IMPROVE</div>
   </div>
-
 
   <div class="card">
 
-    <h2>Smart Camera Setup</h2>
+    <h2>Archery Form Analysis</h2>
 
-    <p>
-      Letakkan peranti pada kedudukan stabil dan pastikan
-      seluruh badan pemanah kelihatan sebelum analisis dimulakan.
+    <p class="description">
+      Pengesanan badan, semakan kedudukan kamera dan
+      pengiraan sudut postur secara langsung.
     </p>
 
-
-    <div class="status">
-
-      <div
-        class="dot"
-        id="statusDot">
-      </div>
-
-      <span id="statusText">
-        Memuatkan AI Pose...
-      </span>
-
+    <div class="status" id="status">
+      Memuatkan AI Pose...
     </div>
 
-
-    <button
-      class="primary"
-      id="cameraButton"
-      disabled>
-
+    <button class="primary" id="startBtn" disabled>
       MEMUATKAN AI...
-
     </button>
 
+    <button class="secondary" id="stopBtn" style="display:none">
+      HENTIKAN KAMERA
+    </button>
 
-    <div
-      class="camera-box"
-      id="cameraBox">
+    <div class="cameraBox" id="cameraBox">
 
-      <video
-        id="camera"
-        autoplay
-        playsinline
-        muted>
-      </video>
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="canvas"></canvas>
 
-      <canvas id="poseCanvas"></canvas>
+      <div class="cameraLabel">● BOWSENSE CAMERA</div>
+      <div class="aiLabel" id="aiLabel">AI POSE</div>
 
+    </div>
 
-      <div class="camera-label">
-        ● BOWSENSE CAMERA
+    <div class="result">
+
+      <h3>Smart Camera Setup</h3>
+
+      <p id="cameraMessage" class="description">
+        Aktifkan kamera untuk memulakan ujian.
+      </p>
+
+      <div class="row">
+        <span>Pemanah</span>
+        <span class="value" id="person">Belum dikesan</span>
       </div>
 
+      <div class="row">
+        <span>Kepala & badan</span>
+        <span class="value" id="body">—</span>
+      </div>
 
-      <div
-        class="ai-label"
-        id="aiLabel">
+      <div class="row">
+        <span>Kaki</span>
+        <span class="value" id="legs">—</span>
+      </div>
 
-        AI POSE
-
+      <div class="row">
+        <span>Framing</span>
+        <span class="value" id="framing">—</span>
       </div>
 
     </div>
 
+    <div class="result">
 
-    <div
-      class="setup-panel"
-      id="setupPanel">
+      <h3>Biomechanics — Live Angles</h3>
 
-      <div class="setup-title">
-        BowSense Smart Camera Setup
+      <div class="row">
+        <span>Garis bahu</span>
+        <span class="value" id="shoulder">—</span>
       </div>
 
-
-      <div
-        class="setup-message"
-        id="setupMessage">
-
-        Mencari pemanah...
-
+      <div class="row">
+        <span>Siku kiri</span>
+        <span class="value" id="leftElbow">—</span>
       </div>
 
-
-      <div class="check-row">
-
-        <span class="check-name">
-          Pemanah
-        </span>
-
-        <span
-          class="check-value"
-          id="personCheck">
-
-          Menunggu...
-
-        </span>
-
+      <div class="row">
+        <span>Siku kanan</span>
+        <span class="value" id="rightElbow">—</span>
       </div>
 
-
-      <div class="check-row">
-
-        <span class="check-name">
-          Kepala & badan
-        </span>
-
-        <span
-          class="check-value"
-          id="upperCheck">
-
-          Menunggu...
-
-        </span>
-
+      <div class="row">
+        <span>Kecondongan torso</span>
+        <span class="value" id="torso">—</span>
       </div>
 
-
-      <div class="check-row">
-
-        <span class="check-name">
-          Kaki
-        </span>
-
-        <span
-          class="check-value"
-          id="feetCheck">
-
-          Menunggu...
-
-        </span>
-
+      <div class="row">
+        <span>Keyakinan bacaan</span>
+        <span class="value" id="confidence">—</span>
       </div>
 
-
-      <div class="check-row">
-
-        <span class="check-name">
-          Framing
-        </span>
-
-        <span
-          class="check-value"
-          id="frameCheck">
-
-          Menunggu...
-
-        </span>
-
-      </div>
+      <p class="notice">
+        Sudut ini ialah ukuran unjuran 2D kamera.
+        Bacaan mungkin berubah mengikut arah kamera,
+        pergerakan dan bahagian badan yang terlindung.
+        Ia belum menentukan sama ada teknik memanah betul atau salah.
+      </p>
 
     </div>
 
   </div>
-
 
   <div class="footer">
     BowSense AI • Demo Prototype
@@ -428,1145 +300,478 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
-<script type="module">
+<script>
+"use strict";
 
-import {
-  PoseLandmarker,
-  FilesetResolver,
-  DrawingUtils
-} from
-"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22-rc.20250304";
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
+const startBtn = document.getElementById("startBtn");
+const stopBtn = document.getElementById("stopBtn");
+const cameraBox = document.getElementById("cameraBox");
 
-/* =========================================
-   ELEMENTS
-   ========================================= */
-
-const cameraButton =
-  document.getElementById("cameraButton");
-
-const camera =
-  document.getElementById("camera");
-
-const cameraBox =
-  document.getElementById("cameraBox");
-
-const poseCanvas =
-  document.getElementById("poseCanvas");
-
-const canvasCtx =
-  poseCanvas.getContext("2d");
-
-const statusText =
-  document.getElementById("statusText");
-
-const statusDot =
-  document.getElementById("statusDot");
-
-const aiLabel =
-  document.getElementById("aiLabel");
-
-const setupPanel =
-  document.getElementById("setupPanel");
-
-const setupMessage =
-  document.getElementById("setupMessage");
-
-const personCheck =
-  document.getElementById("personCheck");
-
-const upperCheck =
-  document.getElementById("upperCheck");
-
-const feetCheck =
-  document.getElementById("feetCheck");
-
-const frameCheck =
-  document.getElementById("frameCheck");
-
-
-/* =========================================
-   VARIABLES
-   ========================================= */
-
-let poseLandmarker = null;
-
-let drawingUtils = null;
-
+let pose = null;
+let stream = null;
 let running = false;
+let processing = false;
+let frameRequest = null;
+let lastFrameTime = 0;
 
-let lastVideoTime = -1;
+const $ = id => document.getElementById(id);
 
-
-/*
-  Supaya mesej tidak bertukar terlalu cepat
-  akibat satu frame yang kurang tepat.
-
-  Status baru perlu muncul beberapa frame
-  berturut-turut sebelum diterima.
-*/
-
-let pendingSetupState = "";
-
-let stableSetupState = "";
-
-let setupStateFrames = 0;
-
-const REQUIRED_STABLE_FRAMES = 8;
-
-
-/* =========================================
-   HELPER
-   ========================================= */
-
-function visibilityOf(landmark) {
-
-  if (!landmark) {
-    return 0;
-  }
-
-  /*
-    Sesetengah keputusan mungkin tidak
-    menyediakan visibility.
-
-    Dalam keadaan itu kita gunakan 1.
-  */
-
-  if (
-    typeof landmark.visibility === "number"
-  ) {
-
-    return landmark.visibility;
-
-  }
-
-  return 1;
+function setValue(id, text, className = "") {
+  const el = $(id);
+  el.textContent = text;
+  el.className = "value " + className;
 }
 
+function visible(point, threshold = 0.6) {
+  return !!point &&
+    Number.isFinite(point.x) &&
+    Number.isFinite(point.y) &&
+    (point.visibility === undefined ||
+     point.visibility >= threshold);
+}
 
-function isVisible(
-  landmark,
-  minimum = 0.45
-) {
-
-  if (!landmark) {
-    return false;
+function angle(a, b, c) {
+  if (!visible(a) || !visible(b) || !visible(c)) {
+    return null;
   }
 
-  return (
-    visibilityOf(landmark) >= minimum &&
-    landmark.x >= 0 &&
-    landmark.x <= 1 &&
-    landmark.y >= 0 &&
-    landmark.y <= 1
+  const abx = a.x - b.x;
+  const aby = a.y - b.y;
+  const cbx = c.x - b.x;
+  const cby = c.y - b.y;
+
+  const dot = abx * cbx + aby * cby;
+  const mag1 = Math.hypot(abx, aby);
+  const mag2 = Math.hypot(cbx, cby);
+
+  if (mag1 === 0 || mag2 === 0) return null;
+
+  const cosine = Math.max(
+    -1,
+    Math.min(1, dot / (mag1 * mag2))
   );
 
+  return Math.acos(cosine) * 180 / Math.PI;
 }
 
+function lineTilt(a, b) {
+  if (!visible(a) || !visible(b)) return null;
 
-function setCheck(
-  element,
-  text,
-  type
-) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
 
-  element.textContent = text;
+  if (Math.hypot(dx, dy) < 0.001) return null;
 
-  element.className =
-    "check-value " + type;
-
+  return Math.atan2(Math.abs(dy), Math.abs(dx)) *
+    180 / Math.PI;
 }
 
-
-function setDot(type) {
-
-  statusDot.className = "dot";
-
-  if (type) {
-    statusDot.classList.add(type);
+function torsoTilt(ls, rs, lh, rh) {
+  if (![ls, rs, lh, rh].every(p => visible(p))) {
+    return null;
   }
 
+  const shoulderMid = {
+    x: (ls.x + rs.x) / 2,
+    y: (ls.y + rs.y) / 2
+  };
+
+  const hipMid = {
+    x: (lh.x + rh.x) / 2,
+    y: (lh.y + rh.y) / 2
+  };
+
+  const dx = shoulderMid.x - hipMid.x;
+  const dy = shoulderMid.y - hipMid.y;
+
+  if (Math.hypot(dx, dy) < 0.001) return null;
+
+  return Math.atan2(Math.abs(dx), Math.abs(dy)) *
+    180 / Math.PI;
 }
 
-
-/* =========================================
-   LOAD AI
-   ========================================= */
-
-async function loadPoseAI() {
-
-  try {
-
-    statusText.textContent =
-      "Memuatkan AI Pose...";
-
-    cameraButton.textContent =
-      "MEMUATKAN AI...";
-
-    cameraButton.disabled = true;
-
-
-    const vision =
-      await FilesetResolver.forVisionTasks(
-
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22-rc.20250304/wasm"
-
-      );
-
-
-    poseLandmarker =
-      await PoseLandmarker.createFromOptions(
-
-        vision,
-
-        {
-
-          baseOptions: {
-
-            modelAssetPath:
-              "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-
-            delegate: "GPU"
-
-          },
-
-          runningMode: "VIDEO",
-
-          numPoses: 1,
-
-          minPoseDetectionConfidence: 0.5,
-
-          minPosePresenceConfidence: 0.5,
-
-          minTrackingConfidence: 0.5
-
-        }
-
-      );
-
-
-    drawingUtils =
-      new DrawingUtils(canvasCtx);
-
-
-    statusText.textContent =
-      "AI Pose sedia ✓";
-
-
-    cameraButton.textContent =
-      "AKTIFKAN KAMERA";
-
-
-    cameraButton.disabled =
-      false;
-
-
-    setDot("");
-
-  }
-
-  catch (error) {
-
-    console.error(
-      "AI Pose load error:",
-      error
-    );
-
-
-    statusText.textContent =
-      "AI Pose gagal dimuatkan";
-
-
-    cameraButton.textContent =
-      "CUBA SEMULA";
-
-
-    cameraButton.disabled =
-      false;
-
-
-    setDot("error");
-
-  }
-
-}
-
-
-/* =========================================
-   CAMERA
-   ========================================= */
-
-cameraButton.addEventListener(
-  "click",
-  async () => {
-
-    if (!poseLandmarker) {
-
-      await loadPoseAI();
-
-      return;
-
-    }
-
-
-    statusText.textContent =
-      "Meminta akses kamera...";
-
-
-    cameraButton.disabled =
-      true;
-
-
-    try {
-
-      const stream =
-        await navigator.mediaDevices.getUserMedia({
-
-          video: {
-
-            facingMode: {
-              ideal: "environment"
-            },
-
-            width: {
-              ideal: 1280
-            },
-
-            height: {
-              ideal: 720
-            }
-
-          },
-
-          audio: false
-
-        });
-
-
-      camera.srcObject =
-        stream;
-
-
-      await camera.play();
-
-
-      cameraBox.style.display =
-        "block";
-
-
-      setupPanel.style.display =
-        "block";
-
-
-      cameraButton.textContent =
-        "KAMERA AKTIF";
-
-
-      statusText.textContent =
-        "Mencari pemanah...";
-
-
-      setupMessage.textContent =
-        "Berdiri di hadapan kamera.";
-
-
-      running = true;
-
-      lastVideoTime = -1;
-
-
-      requestAnimationFrame(
-        detectPose
-      );
-
-    }
-
-    catch (error) {
-
-      console.error(
-        "Camera error:",
-        error
-      );
-
-
-      statusText.textContent =
-        "Kamera tidak dapat diaktifkan";
-
-
-      cameraButton.textContent =
-        "CUBA LAGI";
-
-
-      cameraButton.disabled =
-        false;
-
-
-      setDot("error");
-
-
-      alert(
-
-        "BowSense AI memerlukan kebenaran kamera. " +
-        "Sila benarkan akses kamera dalam browser."
-
-      );
-
-    }
-
-  }
-
-);
-
-
-/* =========================================
-   DETECTION LOOP
-   ========================================= */
-
-function detectPose() {
-
-  if (!running) {
+function showAngle(id, value) {
+  if (value === null || !Number.isFinite(value)) {
+    setValue(id, "Tidak dapat diukur", "muted");
     return;
   }
 
-
-  if (
-
-    camera.readyState >= 2 &&
-
-    camera.videoWidth > 0 &&
-
-    camera.videoHeight > 0
-
-  ) {
-
-
-    if (
-
-      poseCanvas.width !==
-      camera.videoWidth ||
-
-      poseCanvas.height !==
-      camera.videoHeight
-
-    ) {
-
-      poseCanvas.width =
-        camera.videoWidth;
-
-      poseCanvas.height =
-        camera.videoHeight;
-
-    }
-
-
-    if (
-      camera.currentTime !== lastVideoTime
-    ) {
-
-      lastVideoTime =
-        camera.currentTime;
-
-
-      try {
-
-        const result =
-          poseLandmarker.detectForVideo(
-
-            camera,
-
-            performance.now()
-
-          );
-
-
-        drawPose(result);
-
-      }
-
-      catch (error) {
-
-        console.error(
-          "Pose detection error:",
-          error
-        );
-
-      }
-
-    }
-
-  }
-
-
-  requestAnimationFrame(
-    detectPose
-  );
-
+  setValue(id, value.toFixed(1) + "°", "good");
 }
 
+function resetReadings() {
+  ["shoulder", "leftElbow", "rightElbow", "torso"]
+    .forEach(id => setValue(id, "—"));
 
-/* =========================================
-   DRAW POSE
-   ========================================= */
-
-function drawPose(result) {
-
-  canvasCtx.save();
-
-
-  canvasCtx.clearRect(
-
-    0,
-
-    0,
-
-    poseCanvas.width,
-
-    poseCanvas.height
-
-  );
-
-
-  if (
-
-    result.landmarks &&
-
-    result.landmarks.length > 0
-
-  ) {
-
-    const landmarks =
-      result.landmarks[0];
-
-
-    drawingUtils.drawConnectors(
-
-      landmarks,
-
-      PoseLandmarker.POSE_CONNECTIONS,
-
-      {
-        color: "#57d6a0",
-        lineWidth: 4
-      }
-
-    );
-
-
-    drawingUtils.drawLandmarks(
-
-      landmarks,
-
-      {
-        color: "#ffffff",
-        fillColor: "#57d6a0",
-        lineWidth: 2,
-        radius: 4
-      }
-
-    );
-
-
-    aiLabel.textContent =
-      "AI POSE ✓";
-
-
-    analyseCameraSetup(
-      landmarks
-    );
-
-  }
-
-  else {
-
-    aiLabel.textContent =
-      "AI POSE";
-
-
-    updateStableSetupState(
-      "NO_PERSON"
-    );
-
-  }
-
-
-  canvasCtx.restore();
-
+  setValue("confidence", "—");
 }
 
+function analyzeLandmarks(p) {
+  if (!p || p.length < 33) {
+    setValue("person", "Tidak dikesan", "warn");
+    setValue("body", "—");
+    setValue("legs", "—");
+    setValue("framing", "Cari pemanah", "warn");
 
-/* =========================================
-   SMART CAMERA ANALYSIS
-   ========================================= */
+    $("cameraMessage").textContent =
+      "Pastikan seorang pemanah berada dalam kamera.";
 
-function analyseCameraSetup(
-  landmarks
-) {
+    resetReadings();
+    return;
+  }
 
-  /*
-    MediaPipe Pose landmark:
+  const nose = p[0];
 
-    0  = nose
+  const leftShoulder = p[11];
+  const rightShoulder = p[12];
 
-    11 = left shoulder
-    12 = right shoulder
+  const leftElbow = p[13];
+  const rightElbow = p[14];
 
-    23 = left hip
-    24 = right hip
+  const leftWrist = p[15];
+  const rightWrist = p[16];
 
-    27 = left ankle
-    28 = right ankle
+  const leftHip = p[23];
+  const rightHip = p[24];
 
-    29 = left heel
-    30 = right heel
+  const leftAnkle = p[27];
+  const rightAnkle = p[28];
 
-    31 = left foot index
-    32 = right foot index
-  */
+  const leftHeel = p[29];
+  const rightHeel = p[30];
 
+  const leftFoot = p[31];
+  const rightFoot = p[32];
 
-  const nose =
-    landmarks[0];
+  const headOK = visible(nose, 0.55);
 
-
-  const leftShoulder =
-    landmarks[11];
-
-  const rightShoulder =
-    landmarks[12];
-
-
-  const leftHip =
-    landmarks[23];
-
-  const rightHip =
-    landmarks[24];
-
-
-  const leftAnkle =
-    landmarks[27];
-
-  const rightAnkle =
-    landmarks[28];
-
-
-  const leftHeel =
-    landmarks[29];
-
-  const rightHeel =
-    landmarks[30];
-
-
-  const leftFoot =
-    landmarks[31];
-
-  const rightFoot =
-    landmarks[32];
-
-
-  /*
-    UPPER BODY CHECK
-  */
-
-  const headVisible =
-    isVisible(nose);
-
-
-  const shouldersVisible =
-    isVisible(leftShoulder) &&
-    isVisible(rightShoulder);
-
-
-  const hipsVisible =
-    isVisible(leftHip) &&
-    isVisible(rightHip);
-
-
-  const upperBodyOK =
-    headVisible &&
-    shouldersVisible &&
-    hipsVisible;
-
-
-  /*
-    FOOT CHECK
-
-    Kita tidak bergantung pada satu titik sahaja.
-
-    Setiap kaki dianggap kelihatan jika sekurang-
-    kurangnya dua daripada ankle / heel / foot index
-    mempunyai visibility yang baik.
-  */
-
-  const leftFootPoints = [
-
-    leftAnkle,
-    leftHeel,
-    leftFoot
-
-  ].filter(
-
-    point =>
-      isVisible(point)
-
-  ).length;
-
-
-  const rightFootPoints = [
-
-    rightAnkle,
-    rightHeel,
-    rightFoot
-
-  ].filter(
-
-    point =>
-      isVisible(point)
-
-  ).length;
-
-
-  const leftFootOK =
-    leftFootPoints >= 2;
-
-
-  const rightFootOK =
-    rightFootPoints >= 2;
-
+  const bodyOK =
+    headOK &&
+    visible(leftShoulder) &&
+    visible(rightShoulder) &&
+    visible(leftHip) &&
+    visible(rightHip);
 
   const feetOK =
-    leftFootOK &&
-    rightFootOK;
+    visible(leftAnkle) &&
+    visible(rightAnkle) &&
+    visible(leftHeel) &&
+    visible(rightHeel) &&
+    visible(leftFoot) &&
+    visible(rightFoot);
 
-
-  /*
-    FRAMING CHECK
-
-    Beri sedikit ruang di atas kepala
-    dan bawah kaki.
-
-    Ini bukan ukuran biomekanik.
-    Ia hanya quality check kamera.
-  */
-
-  let topY =
-    nose.y;
-
-
-  const visibleFootY = [
-
-    leftAnkle,
-    rightAnkle,
-    leftHeel,
-    rightHeel,
+  const allPoints = [
+    nose,
+    leftShoulder,
+    rightShoulder,
+    leftHip,
+    rightHip,
     leftFoot,
     rightFoot
+  ];
 
-  ]
+  const margin = 0.025;
 
-  .filter(
-    point => isVisible(point)
-  )
-
-  .map(
-    point => point.y
+  const insideFrame = allPoints.every(point =>
+    visible(point, 0.55) &&
+    point.x > margin &&
+    point.x < 1 - margin &&
+    point.y > margin &&
+    point.y < 1 - margin
   );
 
+  const fullBody = bodyOK && feetOK && insideFrame;
 
-  let bottomY = 1;
+  setValue("person", "Dikesan ✓", "good");
 
-
-  if (
-    visibleFootY.length > 0
-  ) {
-
-    bottomY =
-      Math.max(
-        ...visibleFootY
-      );
-
-  }
-
-
-  /*
-    Jika kepala terlalu dekat bahagian atas
-    atau kaki terlalu dekat bahagian bawah,
-    pemanah mungkin terlalu memenuhi frame.
-  */
-
-  const topMarginOK =
-    topY > 0.025;
-
-
-  const bottomMarginOK =
-    bottomY < 0.975;
-
-
-  const marginOK =
-    topMarginOK &&
-    bottomMarginOK;
-
-
-  /*
-    Tentukan status utama.
-  */
-
-  let newState;
-
-
-  if (!upperBodyOK) {
-
-    newState =
-      "UPPER_MISSING";
-
-  }
-
-  else if (!feetOK) {
-
-    newState =
-      "FEET_MISSING";
-
-  }
-
-  else if (!marginOK) {
-
-    newState =
-      "TOO_CLOSE";
-
-  }
-
-  else {
-
-    newState =
-      "READY";
-
-  }
-
-
-  updateStableSetupState(
-    newState
+  setValue(
+    "body",
+    bodyOK ? "Lengkap ✓" : "Tidak lengkap",
+    bodyOK ? "good" : "warn"
   );
 
-}
-
-
-/* =========================================
-   STABILITY FILTER
-   ========================================= */
-
-function updateStableSetupState(
-  newState
-) {
-
-  if (
-    pendingSetupState === newState
-  ) {
-
-    setupStateFrames++;
-
-  }
-
-  else {
-
-    pendingSetupState =
-      newState;
-
-    setupStateFrames =
-      1;
-
-  }
-
-
-  /*
-    Jangan tukar arahan kerana
-    satu frame sahaja.
-  */
-
-  if (
-
-    setupStateFrames <
-    REQUIRED_STABLE_FRAMES
-
-  ) {
-
-    return;
-
-  }
-
-
-  if (
-    stableSetupState === newState
-  ) {
-
-    return;
-
-  }
-
-
-  stableSetupState =
-    newState;
-
-
-  renderSetupState(
-    newState
+  setValue(
+    "legs",
+    feetOK ? "Lengkap ✓" : "Tidak lengkap",
+    feetOK ? "good" : "warn"
   );
 
-}
+  setValue(
+    "framing",
+    fullBody ? "Sesuai ✓" : "Perlu laras",
+    fullBody ? "good" : "warn"
+  );
 
-
-/* =========================================
-   DISPLAY SMART SETUP STATUS
-   ========================================= */
-
-function renderSetupState(
-  state
-) {
-
-  if (
-    state === "NO_PERSON"
-  ) {
-
-    statusText.textContent =
-      "Mencari pemanah...";
-
-
-    setupMessage.textContent =
-      "Berdiri di hadapan kamera.";
-
-
-    setDot("warning");
-
-
-    setCheck(
-      personCheck,
-      "Tidak dikesan",
-      "warn"
-    );
-
-
-    setCheck(
-      upperCheck,
-      "—",
-      "warn"
-    );
-
-
-    setCheck(
-      feetCheck,
-      "—",
-      "warn"
-    );
-
-
-    setCheck(
-      frameCheck,
-      "—",
-      "warn"
-    );
-
-
-    return;
-
-  }
-
-
-  if (
-    state === "UPPER_MISSING"
-  ) {
-
-    statusText.textContent =
-      "Pemanah dikesan";
-
-
-    setupMessage.textContent =
-      "Pastikan kepala dan seluruh badan berada dalam kamera.";
-
-
-    setDot("warning");
-
-
-    setCheck(
-      personCheck,
-      "Dikesan ✓",
-      "good"
-    );
-
-
-    setCheck(
-      upperCheck,
-      "Tidak lengkap",
-      "warn"
-    );
-
-
-    setCheck(
-      feetCheck,
-      "Semak posisi",
-      "warn"
-    );
-
-
-    setCheck(
-      frameCheck,
-      "Belum sesuai",
-      "warn"
-    );
-
-
-    return;
-
-  }
-
-
-  if (
-    state === "FEET_MISSING"
-  ) {
-
-    statusText.textContent =
-      "Pemanah dikesan";
-
-
-    setupMessage.textContent =
+  if (!bodyOK) {
+    $("cameraMessage").textContent =
+      "Pastikan kepala dan badan jelas dalam frame.";
+  } else if (!feetOK) {
+    $("cameraMessage").textContent =
       "Pastikan kedua-dua kaki berada dalam frame.";
-
-
-    setDot("warning");
-
-
-    setCheck(
-      personCheck,
-      "Dikesan ✓",
-      "good"
-    );
-
-
-    setCheck(
-      upperCheck,
-      "Lengkap ✓",
-      "good"
-    );
-
-
-    setCheck(
-      feetCheck,
-      "Tidak lengkap",
-      "warn"
-    );
-
-
-    setCheck(
-      frameCheck,
-      "Undur sedikit",
-      "warn"
-    );
-
-
-    return;
-
-  }
-
-
-  if (
-    state === "TOO_CLOSE"
-  ) {
-
-    statusText.textContent =
-      "Pemanah dikesan";
-
-
-    setupMessage.textContent =
-      "Undur sedikit supaya terdapat ruang di sekeliling badan.";
-
-
-    setDot("warning");
-
-
-    setCheck(
-      personCheck,
-      "Dikesan ✓",
-      "good"
-    );
-
-
-    setCheck(
-      upperCheck,
-      "Lengkap ✓",
-      "good"
-    );
-
-
-    setCheck(
-      feetCheck,
-      "Lengkap ✓",
-      "good"
-    );
-
-
-    setCheck(
-      frameCheck,
-      "Terlalu rapat",
-      "warn"
-    );
-
-
-    return;
-
-  }
-
-
-  if (
-    state === "READY"
-  ) {
-
-    statusText.textContent =
-      "Kedudukan kamera sesuai ✓";
-
-
-    setupMessage.textContent =
+  } else if (!insideFrame) {
+    $("cameraMessage").textContent =
+      "Undur sedikit supaya seluruh badan tidak terlalu dekat dengan tepi frame.";
+  } else {
+    $("cameraMessage").textContent =
       "Badan penuh dikesan. BowSense bersedia untuk analisis.";
-
-
-    setDot("");
-
-
-    setCheck(
-      personCheck,
-      "Dikesan ✓",
-      "good"
-    );
-
-
-    setCheck(
-      upperCheck,
-      "Lengkap ✓",
-      "good"
-    );
-
-
-    setCheck(
-      feetCheck,
-      "Lengkap ✓",
-      "good"
-    );
-
-
-    setCheck(
-      frameCheck,
-      "Sesuai ✓",
-      "good"
-    );
-
   }
 
+  const shoulderAngle = lineTilt(
+    leftShoulder,
+    rightShoulder
+  );
+
+  const leftElbowAngle = angle(
+    leftShoulder,
+    leftElbow,
+    leftWrist
+  );
+
+  const rightElbowAngle = angle(
+    rightShoulder,
+    rightElbow,
+    rightWrist
+  );
+
+  const torsoAngle = torsoTilt(
+    leftShoulder,
+    rightShoulder,
+    leftHip,
+    rightHip
+  );
+
+  showAngle("shoulder", shoulderAngle);
+  showAngle("leftElbow", leftElbowAngle);
+  showAngle("rightElbow", rightElbowAngle);
+  showAngle("torso", torsoAngle);
+
+  const required = [
+    leftShoulder,
+    rightShoulder,
+    leftElbow,
+    rightElbow,
+    leftWrist,
+    rightWrist,
+    leftHip,
+    rightHip
+  ];
+
+  const confidenceValues = required.map(point =>
+    Number.isFinite(point?.visibility)
+      ? point.visibility
+      : 0
+  );
+
+  const averageConfidence =
+    confidenceValues.reduce((a, b) => a + b, 0) /
+    confidenceValues.length;
+
+  if (averageConfidence >= 0.8) {
+    setValue("confidence", "Tinggi", "good");
+  } else if (averageConfidence >= 0.6) {
+    setValue("confidence", "Sederhana", "warn");
+  } else {
+    setValue("confidence", "Rendah", "warn");
+  }
 }
 
+function onResults(results) {
+  if (!running) return;
 
-/* =========================================
-   START
-   ========================================= */
+  const width = video.videoWidth;
+  const height = video.videoHeight;
+
+  if (!width || !height) return;
+
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+
+  ctx.clearRect(0, 0, width, height);
+
+  const landmarks = results.poseLandmarks;
+
+  if (landmarks) {
+    drawConnectors(
+      ctx,
+      landmarks,
+      POSE_CONNECTIONS,
+      { color: "#57d6a0", lineWidth: 3 }
+    );
+
+    drawLandmarks(
+      ctx,
+      landmarks,
+      { color: "#ffffff", radius: 3 }
+    );
+
+    $("aiLabel").textContent = "AI POSE ✓";
+  } else {
+    $("aiLabel").textContent = "MENCARI POSE";
+  }
+
+  analyzeLandmarks(landmarks);
+}
+
+async function loadPoseAI() {
+  try {
+    if (typeof Pose === "undefined") {
+      throw new Error("Pustaka AI tidak dapat dimuatkan.");
+    }
+
+    pose = new Pose({
+      locateFile: file =>
+        "https://cdn.jsdelivr.net/npm/@mediapipe/pose/" + file
+    });
+
+    pose.setOptions({
+      modelComplexity: 1,
+      smoothLandmarks: true,
+      enableSegmentation: false,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.6
+    });
+
+    pose.onResults(onResults);
+
+    $("status").textContent = "AI Pose sedia ✓";
+    startBtn.disabled = false;
+    startBtn.textContent = "AKTIFKAN KAMERA";
+
+  } catch (error) {
+    console.error(error);
+
+    $("status").textContent =
+      "AI gagal dimuatkan. Semak internet dan refresh halaman.";
+
+    startBtn.textContent = "AI TIDAK TERSEDIA";
+  }
+}
+
+async function processFrame(timestamp) {
+  if (!running) return;
+
+  frameRequest = requestAnimationFrame(processFrame);
+
+  if (
+    processing ||
+    timestamp - lastFrameTime < 100 ||
+    video.readyState < 2
+  ) {
+    return;
+  }
+
+  lastFrameTime = timestamp;
+  processing = true;
+
+  try {
+    await pose.send({ image: video });
+  } catch (error) {
+    console.error("Pose error:", error);
+    $("status").textContent =
+      "Masalah pengesanan AI. Cuba mulakan semula kamera.";
+  } finally {
+    processing = false;
+  }
+}
+
+startBtn.addEventListener("click", async () => {
+  if (!pose || running) return;
+
+  startBtn.disabled = true;
+  $("status").textContent = "Meminta akses kamera...";
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
+    });
+
+    video.srcObject = stream;
+    await video.play();
+
+    running = true;
+    processing = false;
+    lastFrameTime = 0;
+
+    cameraBox.style.display = "block";
+    stopBtn.style.display = "block";
+
+    startBtn.textContent = "KAMERA AKTIF";
+    $("status").textContent = "Kamera aktif ✓";
+
+    frameRequest = requestAnimationFrame(processFrame);
+
+  } catch (error) {
+    console.error(error);
+
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+    }
+
+    $("status").textContent =
+      "Kamera tidak dapat diaktifkan: " + error.message;
+
+    startBtn.disabled = false;
+    startBtn.textContent = "CUBA LAGI";
+  }
+});
+
+stopBtn.addEventListener("click", stopCamera);
+
+function stopCamera() {
+  running = false;
+
+  if (frameRequest !== null) {
+    cancelAnimationFrame(frameRequest);
+    frameRequest = null;
+  }
+
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+  }
+
+  video.pause();
+  video.srcObject = null;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  cameraBox.style.display = "none";
+  stopBtn.style.display = "none";
+
+  startBtn.disabled = false;
+  startBtn.textContent = "AKTIFKAN KAMERA";
+
+  $("status").textContent = "Kamera dihentikan";
+
+  setValue("person", "Belum dikesan");
+  setValue("body", "—");
+  setValue("legs", "—");
+  setValue("framing", "—");
+
+  resetReadings();
+
+  $("cameraMessage").textContent =
+    "Aktifkan kamera untuk memulakan ujian.";
+}
+
+window.addEventListener("pagehide", stopCamera);
 
 loadPoseAI();
-
 </script>
 
 </body>
