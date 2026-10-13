@@ -2,8 +2,11 @@
 <html lang="ms">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
 
   <title>BowSense AI</title>
 
@@ -94,6 +97,7 @@
       border-radius: 50%;
       background: #57d6a0;
       box-shadow: 0 0 10px #57d6a0;
+      flex-shrink: 0;
     }
 
     button {
@@ -111,6 +115,15 @@
       color: #06120d;
     }
 
+    .primary:disabled {
+      opacity: 0.65;
+      cursor: default;
+    }
+
+    /* ==============================
+       CAMERA
+       ============================== */
+
     .camera-box {
       display: none;
       margin-top: 20px;
@@ -120,19 +133,68 @@
       position: relative;
     }
 
-    video {
+    #camera {
       width: 100%;
+      height: auto;
       display: block;
+    }
+
+    /*
+      Canvas berada di atas video.
+      Skeleton akan dilukis di sini.
+    */
+
+    #poseCanvas {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
     }
 
     .camera-label {
       position: absolute;
       top: 12px;
       left: 12px;
-      background: rgba(0,0,0,.65);
+      z-index: 5;
+      background: rgba(0, 0, 0, 0.65);
       padding: 8px 11px;
       border-radius: 20px;
       font-size: 12px;
+    }
+
+    .ai-label {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 5;
+      background: rgba(0, 0, 0, 0.65);
+      padding: 8px 11px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: #57d6a0;
+    }
+
+    .pose-info {
+      display: none;
+      margin-top: 15px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #0b1624;
+      border: 1px solid #26384d;
+    }
+
+    .pose-info-title {
+      font-weight: bold;
+      color: #57d6a0;
+      margin-bottom: 6px;
+    }
+
+    .pose-info-text {
+      color: #a9b7c8;
+      font-size: 13px;
+      line-height: 1.5;
     }
 
     .footer {
@@ -149,6 +211,7 @@
 <div class="app">
 
   <div class="brand">
+
     <div class="logo">🏹</div>
 
     <h1>BOWSENSE AI</h1>
@@ -160,30 +223,47 @@
     <div class="tagline">
       SEE • ANALYZE • TRAIN • IMPROVE
     </div>
+
   </div>
 
 
   <div class="card">
 
-    <h2>Demo Prototype</h2>
+    <h2>AI Pose Detection</h2>
 
     <p>
-      Langkah pertama adalah memastikan BowSense AI
-      boleh menggunakan kamera telefon anda.
+      BowSense AI menggunakan kamera telefon untuk
+      mengesan kedudukan badan pemanah secara langsung.
     </p>
 
+
     <div class="status">
-      <div class="dot"></div>
-      <span id="statusText">Sistem sedia untuk ujian</span>
+
+      <div
+        class="dot"
+        id="statusDot">
+      </div>
+
+      <span id="statusText">
+        Memuatkan AI Pose...
+      </span>
+
     </div>
+
 
     <button
       class="primary"
-      id="cameraButton">
-      AKTIFKAN KAMERA
+      id="cameraButton"
+      disabled>
+
+      MEMUATKAN AI...
+
     </button>
 
-    <div class="camera-box" id="cameraBox">
+
+    <div
+      class="camera-box"
+      id="cameraBox">
 
       <video
         id="camera"
@@ -192,8 +272,39 @@
         muted>
       </video>
 
+      <canvas id="poseCanvas"></canvas>
+
+
       <div class="camera-label">
         ● BOWSENSE CAMERA
+      </div>
+
+
+      <div
+        class="ai-label"
+        id="aiLabel">
+
+        AI POSE
+
+      </div>
+
+    </div>
+
+
+    <div
+      class="pose-info"
+      id="poseInfo">
+
+      <div class="pose-info-title">
+        BowSense Pose Detection
+      </div>
+
+      <div
+        class="pose-info-text"
+        id="poseInfoText">
+
+        Mencari pemanah...
+
       </div>
 
     </div>
@@ -208,7 +319,19 @@
 </div>
 
 
-<script>
+<script type="module">
+
+import {
+  PoseLandmarker,
+  FilesetResolver,
+  DrawingUtils
+} from
+"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22-rc.20250304";
+
+
+/* =========================================
+   ELEMENTS
+   ========================================= */
 
 const cameraButton =
   document.getElementById("cameraButton");
@@ -219,66 +342,469 @@ const camera =
 const cameraBox =
   document.getElementById("cameraBox");
 
+const poseCanvas =
+  document.getElementById("poseCanvas");
+
+const canvasCtx =
+  poseCanvas.getContext("2d");
+
 const statusText =
   document.getElementById("statusText");
 
+const poseInfo =
+  document.getElementById("poseInfo");
 
-cameraButton.addEventListener("click", async () => {
+const poseInfoText =
+  document.getElementById("poseInfoText");
 
-  statusText.textContent =
-    "Meminta akses kamera...";
+const aiLabel =
+  document.getElementById("aiLabel");
+
+
+/* =========================================
+   VARIABLES
+   ========================================= */
+
+let poseLandmarker = null;
+let drawingUtils = null;
+
+let running = false;
+let lastVideoTime = -1;
+
+
+/* =========================================
+   LOAD AI
+   ========================================= */
+
+async function loadPoseAI() {
 
   try {
 
-    const stream =
-      await navigator.mediaDevices.getUserMedia({
-
-        video: {
-          facingMode: {
-            ideal: "environment"
-          },
-
-          width: {
-            ideal: 1280
-          },
-
-          height: {
-            ideal: 720
-          }
-        },
-
-        audio: false
-      });
-
-
-    camera.srcObject = stream;
-
-    cameraBox.style.display = "block";
-
     statusText.textContent =
-      "Kamera aktif ✓";
+      "Memuatkan AI Pose...";
 
     cameraButton.textContent =
-      "KAMERA AKTIF";
+      "MEMUATKAN AI...";
 
     cameraButton.disabled = true;
 
 
-  } catch (error) {
+    const vision =
+      await FilesetResolver.forVisionTasks(
 
-    console.error(error);
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22-rc.20250304/wasm"
+
+      );
+
+
+    poseLandmarker =
+      await PoseLandmarker.createFromOptions(
+
+        vision,
+
+        {
+
+          baseOptions: {
+
+            modelAssetPath:
+              "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+
+            delegate: "GPU"
+
+          },
+
+          runningMode: "VIDEO",
+
+          numPoses: 1,
+
+          minPoseDetectionConfidence: 0.5,
+
+          minPosePresenceConfidence: 0.5,
+
+          minTrackingConfidence: 0.5
+
+        }
+
+      );
+
+
+    drawingUtils =
+      new DrawingUtils(canvasCtx);
+
 
     statusText.textContent =
-      "Kamera tidak dapat diaktifkan";
+      "AI Pose sedia ✓";
 
-    alert(
-      "BowSense AI memerlukan kebenaran kamera. " +
-      "Sila benarkan akses kamera dalam browser."
-    );
+
+    cameraButton.textContent =
+      "AKTIFKAN KAMERA";
+
+
+    cameraButton.disabled =
+      false;
 
   }
 
-});
+  catch (error) {
+
+    console.error(
+      "AI Pose load error:",
+      error
+    );
+
+
+    statusText.textContent =
+      "AI Pose gagal dimuatkan";
+
+
+    cameraButton.textContent =
+      "CUBA SEMULA";
+
+
+    cameraButton.disabled =
+      false;
+
+  }
+
+}
+
+
+/* =========================================
+   CAMERA BUTTON
+   ========================================= */
+
+cameraButton.addEventListener(
+  "click",
+  async () => {
+
+    /*
+      Jika model belum tersedia,
+      cuba muatkan semula.
+    */
+
+    if (!poseLandmarker) {
+
+      await loadPoseAI();
+
+      return;
+
+    }
+
+
+    statusText.textContent =
+      "Meminta akses kamera...";
+
+
+    cameraButton.disabled =
+      true;
+
+
+    try {
+
+      const stream =
+        await navigator.mediaDevices.getUserMedia({
+
+          video: {
+
+            facingMode: {
+              ideal: "environment"
+            },
+
+            width: {
+              ideal: 1280
+            },
+
+            height: {
+              ideal: 720
+            }
+
+          },
+
+          /*
+            BowSense tidak memerlukan
+            mikrofon untuk Pose Detection.
+          */
+
+          audio: false
+
+        });
+
+
+      camera.srcObject =
+        stream;
+
+
+      await camera.play();
+
+
+      cameraBox.style.display =
+        "block";
+
+
+      poseInfo.style.display =
+        "block";
+
+
+      cameraButton.textContent =
+        "KAMERA AKTIF";
+
+
+      statusText.textContent =
+        "Kamera aktif • Mencari pemanah...";
+
+
+      poseInfoText.textContent =
+        "Pastikan seluruh badan berada dalam kamera.";
+
+
+      running = true;
+
+      lastVideoTime = -1;
+
+
+      requestAnimationFrame(
+        detectPose
+      );
+
+    }
+
+    catch (error) {
+
+      console.error(
+        "Camera error:",
+        error
+      );
+
+
+      statusText.textContent =
+        "Kamera tidak dapat diaktifkan";
+
+
+      cameraButton.textContent =
+        "CUBA LAGI";
+
+
+      cameraButton.disabled =
+        false;
+
+
+      alert(
+
+        "BowSense AI memerlukan kebenaran kamera. " +
+        "Sila benarkan akses kamera dalam browser."
+
+      );
+
+    }
+
+  }
+
+);
+
+
+/* =========================================
+   POSE DETECTION LOOP
+   ========================================= */
+
+function detectPose() {
+
+  if (!running) {
+    return;
+  }
+
+
+  if (
+
+    camera.readyState >= 2 &&
+
+    camera.videoWidth > 0 &&
+
+    camera.videoHeight > 0
+
+  ) {
+
+
+    /*
+      Canvas mesti menggunakan resolusi
+      yang sama dengan video kamera.
+    */
+
+    if (
+
+      poseCanvas.width !== camera.videoWidth ||
+
+      poseCanvas.height !== camera.videoHeight
+
+    ) {
+
+      poseCanvas.width =
+        camera.videoWidth;
+
+      poseCanvas.height =
+        camera.videoHeight;
+
+    }
+
+
+    /*
+      Jangan analisis frame yang sama
+      berulang kali.
+    */
+
+    if (
+      camera.currentTime !== lastVideoTime
+    ) {
+
+      lastVideoTime =
+        camera.currentTime;
+
+
+      try {
+
+        const result =
+          poseLandmarker.detectForVideo(
+
+            camera,
+
+            performance.now()
+
+          );
+
+
+        drawPose(result);
+
+      }
+
+      catch (error) {
+
+        console.error(
+          "Pose detection error:",
+          error
+        );
+
+      }
+
+    }
+
+  }
+
+
+  requestAnimationFrame(
+    detectPose
+  );
+
+}
+
+
+/* =========================================
+   DRAW SKELETON
+   ========================================= */
+
+function drawPose(result) {
+
+  canvasCtx.save();
+
+
+  canvasCtx.clearRect(
+
+    0,
+
+    0,
+
+    poseCanvas.width,
+
+    poseCanvas.height
+
+  );
+
+
+  if (
+
+    result.landmarks &&
+
+    result.landmarks.length > 0
+
+  ) {
+
+    const landmarks =
+      result.landmarks[0];
+
+
+    /*
+      Sambungan antara sendi.
+    */
+
+    drawingUtils.drawConnectors(
+
+      landmarks,
+
+      PoseLandmarker.POSE_CONNECTIONS,
+
+      {
+        color: "#57d6a0",
+        lineWidth: 4
+      }
+
+    );
+
+
+    /*
+      Titik landmark badan.
+    */
+
+    drawingUtils.drawLandmarks(
+
+      landmarks,
+
+      {
+        color: "#ffffff",
+        fillColor: "#57d6a0",
+        lineWidth: 2,
+        radius: 4
+      }
+
+    );
+
+
+    statusText.textContent =
+      "Pemanah dikesan ✓";
+
+
+    poseInfoText.textContent =
+      "AI sedang menjejak kedudukan badan.";
+
+
+    aiLabel.textContent =
+      "AI POSE ✓";
+
+  }
+
+  else {
+
+    statusText.textContent =
+      "Mencari pemanah...";
+
+
+    poseInfoText.textContent =
+      "Pastikan seluruh badan berada dalam kamera.";
+
+
+    aiLabel.textContent =
+      "AI POSE";
+
+  }
+
+
+  canvasCtx.restore();
+
+}
+
+
+/* =========================================
+   START BOWSENSE
+   ========================================= */
+
+loadPoseAI();
 
 </script>
 
