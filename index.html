@@ -95,9 +95,19 @@
       width: 11px;
       height: 11px;
       border-radius: 50%;
+      flex-shrink: 0;
       background: #57d6a0;
       box-shadow: 0 0 10px #57d6a0;
-      flex-shrink: 0;
+    }
+
+    .dot.warning {
+      background: #ffc857;
+      box-shadow: 0 0 10px #ffc857;
+    }
+
+    .dot.error {
+      background: #ff6b6b;
+      box-shadow: 0 0 10px #ff6b6b;
     }
 
     button {
@@ -120,9 +130,9 @@
       cursor: default;
     }
 
-    /* ==============================
+    /* ============================
        CAMERA
-       ============================== */
+       ============================ */
 
     .camera-box {
       display: none;
@@ -138,11 +148,6 @@
       height: auto;
       display: block;
     }
-
-    /*
-      Canvas berada di atas video.
-      Skeleton akan dilukis di sini.
-    */
 
     #poseCanvas {
       position: absolute;
@@ -176,25 +181,61 @@
       color: #57d6a0;
     }
 
-    .pose-info {
+    /* ============================
+       SMART SETUP PANEL
+       ============================ */
+
+    .setup-panel {
       display: none;
       margin-top: 15px;
-      padding: 14px;
-      border-radius: 12px;
+      padding: 16px;
+      border-radius: 14px;
       background: #0b1624;
       border: 1px solid #26384d;
     }
 
-    .pose-info-title {
+    .setup-title {
       font-weight: bold;
       color: #57d6a0;
-      margin-bottom: 6px;
+      margin-bottom: 12px;
     }
 
-    .pose-info-text {
-      color: #a9b7c8;
+    .setup-message {
+      font-size: 15px;
+      font-weight: bold;
+      line-height: 1.4;
+      margin-bottom: 14px;
+    }
+
+    .check-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      padding: 9px 0;
+      border-top: 1px solid #1b2b3e;
       font-size: 13px;
-      line-height: 1.5;
+    }
+
+    .check-name {
+      color: #a9b7c8;
+    }
+
+    .check-value {
+      font-weight: bold;
+      text-align: right;
+    }
+
+    .good {
+      color: #57d6a0;
+    }
+
+    .warn {
+      color: #ffc857;
+    }
+
+    .bad {
+      color: #ff6b6b;
     }
 
     .footer {
@@ -229,11 +270,11 @@
 
   <div class="card">
 
-    <h2>AI Pose Detection</h2>
+    <h2>Smart Camera Setup</h2>
 
     <p>
-      BowSense AI menggunakan kamera telefon untuk
-      mengesan kedudukan badan pemanah secara langsung.
+      Letakkan peranti pada kedudukan stabil dan pastikan
+      seluruh badan pemanah kelihatan sebelum analisis dimulakan.
     </p>
 
 
@@ -292,18 +333,87 @@
 
 
     <div
-      class="pose-info"
-      id="poseInfo">
+      class="setup-panel"
+      id="setupPanel">
 
-      <div class="pose-info-title">
-        BowSense Pose Detection
+      <div class="setup-title">
+        BowSense Smart Camera Setup
       </div>
 
+
       <div
-        class="pose-info-text"
-        id="poseInfoText">
+        class="setup-message"
+        id="setupMessage">
 
         Mencari pemanah...
+
+      </div>
+
+
+      <div class="check-row">
+
+        <span class="check-name">
+          Pemanah
+        </span>
+
+        <span
+          class="check-value"
+          id="personCheck">
+
+          Menunggu...
+
+        </span>
+
+      </div>
+
+
+      <div class="check-row">
+
+        <span class="check-name">
+          Kepala & badan
+        </span>
+
+        <span
+          class="check-value"
+          id="upperCheck">
+
+          Menunggu...
+
+        </span>
+
+      </div>
+
+
+      <div class="check-row">
+
+        <span class="check-name">
+          Kaki
+        </span>
+
+        <span
+          class="check-value"
+          id="feetCheck">
+
+          Menunggu...
+
+        </span>
+
+      </div>
+
+
+      <div class="check-row">
+
+        <span class="check-name">
+          Framing
+        </span>
+
+        <span
+          class="check-value"
+          id="frameCheck">
+
+          Menunggu...
+
+        </span>
 
       </div>
 
@@ -351,14 +461,29 @@ const canvasCtx =
 const statusText =
   document.getElementById("statusText");
 
-const poseInfo =
-  document.getElementById("poseInfo");
-
-const poseInfoText =
-  document.getElementById("poseInfoText");
+const statusDot =
+  document.getElementById("statusDot");
 
 const aiLabel =
   document.getElementById("aiLabel");
+
+const setupPanel =
+  document.getElementById("setupPanel");
+
+const setupMessage =
+  document.getElementById("setupMessage");
+
+const personCheck =
+  document.getElementById("personCheck");
+
+const upperCheck =
+  document.getElementById("upperCheck");
+
+const feetCheck =
+  document.getElementById("feetCheck");
+
+const frameCheck =
+  document.getElementById("frameCheck");
 
 
 /* =========================================
@@ -366,10 +491,103 @@ const aiLabel =
    ========================================= */
 
 let poseLandmarker = null;
+
 let drawingUtils = null;
 
 let running = false;
+
 let lastVideoTime = -1;
+
+
+/*
+  Supaya mesej tidak bertukar terlalu cepat
+  akibat satu frame yang kurang tepat.
+
+  Status baru perlu muncul beberapa frame
+  berturut-turut sebelum diterima.
+*/
+
+let pendingSetupState = "";
+
+let stableSetupState = "";
+
+let setupStateFrames = 0;
+
+const REQUIRED_STABLE_FRAMES = 8;
+
+
+/* =========================================
+   HELPER
+   ========================================= */
+
+function visibilityOf(landmark) {
+
+  if (!landmark) {
+    return 0;
+  }
+
+  /*
+    Sesetengah keputusan mungkin tidak
+    menyediakan visibility.
+
+    Dalam keadaan itu kita gunakan 1.
+  */
+
+  if (
+    typeof landmark.visibility === "number"
+  ) {
+
+    return landmark.visibility;
+
+  }
+
+  return 1;
+}
+
+
+function isVisible(
+  landmark,
+  minimum = 0.45
+) {
+
+  if (!landmark) {
+    return false;
+  }
+
+  return (
+    visibilityOf(landmark) >= minimum &&
+    landmark.x >= 0 &&
+    landmark.x <= 1 &&
+    landmark.y >= 0 &&
+    landmark.y <= 1
+  );
+
+}
+
+
+function setCheck(
+  element,
+  text,
+  type
+) {
+
+  element.textContent = text;
+
+  element.className =
+    "check-value " + type;
+
+}
+
+
+function setDot(type) {
+
+  statusDot.className = "dot";
+
+  if (type) {
+    statusDot.classList.add(type);
+  }
+
+}
 
 
 /* =========================================
@@ -443,6 +661,9 @@ async function loadPoseAI() {
     cameraButton.disabled =
       false;
 
+
+    setDot("");
+
   }
 
   catch (error) {
@@ -464,23 +685,21 @@ async function loadPoseAI() {
     cameraButton.disabled =
       false;
 
+
+    setDot("error");
+
   }
 
 }
 
 
 /* =========================================
-   CAMERA BUTTON
+   CAMERA
    ========================================= */
 
 cameraButton.addEventListener(
   "click",
   async () => {
-
-    /*
-      Jika model belum tersedia,
-      cuba muatkan semula.
-    */
 
     if (!poseLandmarker) {
 
@@ -520,11 +739,6 @@ cameraButton.addEventListener(
 
           },
 
-          /*
-            BowSense tidak memerlukan
-            mikrofon untuk Pose Detection.
-          */
-
           audio: false
 
         });
@@ -541,7 +755,7 @@ cameraButton.addEventListener(
         "block";
 
 
-      poseInfo.style.display =
+      setupPanel.style.display =
         "block";
 
 
@@ -550,11 +764,11 @@ cameraButton.addEventListener(
 
 
       statusText.textContent =
-        "Kamera aktif • Mencari pemanah...";
+        "Mencari pemanah...";
 
 
-      poseInfoText.textContent =
-        "Pastikan seluruh badan berada dalam kamera.";
+      setupMessage.textContent =
+        "Berdiri di hadapan kamera.";
 
 
       running = true;
@@ -588,6 +802,9 @@ cameraButton.addEventListener(
         false;
 
 
+      setDot("error");
+
+
       alert(
 
         "BowSense AI memerlukan kebenaran kamera. " +
@@ -603,7 +820,7 @@ cameraButton.addEventListener(
 
 
 /* =========================================
-   POSE DETECTION LOOP
+   DETECTION LOOP
    ========================================= */
 
 function detectPose() {
@@ -624,16 +841,13 @@ function detectPose() {
   ) {
 
 
-    /*
-      Canvas mesti menggunakan resolusi
-      yang sama dengan video kamera.
-    */
-
     if (
 
-      poseCanvas.width !== camera.videoWidth ||
+      poseCanvas.width !==
+      camera.videoWidth ||
 
-      poseCanvas.height !== camera.videoHeight
+      poseCanvas.height !==
+      camera.videoHeight
 
     ) {
 
@@ -645,11 +859,6 @@ function detectPose() {
 
     }
 
-
-    /*
-      Jangan analisis frame yang sama
-      berulang kali.
-    */
 
     if (
       camera.currentTime !== lastVideoTime
@@ -697,7 +906,7 @@ function detectPose() {
 
 
 /* =========================================
-   DRAW SKELETON
+   DRAW POSE
    ========================================= */
 
 function drawPose(result) {
@@ -730,10 +939,6 @@ function drawPose(result) {
       result.landmarks[0];
 
 
-    /*
-      Sambungan antara sendi.
-    */
-
     drawingUtils.drawConnectors(
 
       landmarks,
@@ -747,10 +952,6 @@ function drawPose(result) {
 
     );
 
-
-    /*
-      Titik landmark badan.
-    */
 
     drawingUtils.drawLandmarks(
 
@@ -766,31 +967,25 @@ function drawPose(result) {
     );
 
 
-    statusText.textContent =
-      "Pemanah dikesan ✓";
-
-
-    poseInfoText.textContent =
-      "AI sedang menjejak kedudukan badan.";
-
-
     aiLabel.textContent =
       "AI POSE ✓";
+
+
+    analyseCameraSetup(
+      landmarks
+    );
 
   }
 
   else {
 
-    statusText.textContent =
-      "Mencari pemanah...";
-
-
-    poseInfoText.textContent =
-      "Pastikan seluruh badan berada dalam kamera.";
-
-
     aiLabel.textContent =
       "AI POSE";
+
+
+    updateStableSetupState(
+      "NO_PERSON"
+    );
 
   }
 
@@ -801,7 +996,573 @@ function drawPose(result) {
 
 
 /* =========================================
-   START BOWSENSE
+   SMART CAMERA ANALYSIS
+   ========================================= */
+
+function analyseCameraSetup(
+  landmarks
+) {
+
+  /*
+    MediaPipe Pose landmark:
+
+    0  = nose
+
+    11 = left shoulder
+    12 = right shoulder
+
+    23 = left hip
+    24 = right hip
+
+    27 = left ankle
+    28 = right ankle
+
+    29 = left heel
+    30 = right heel
+
+    31 = left foot index
+    32 = right foot index
+  */
+
+
+  const nose =
+    landmarks[0];
+
+
+  const leftShoulder =
+    landmarks[11];
+
+  const rightShoulder =
+    landmarks[12];
+
+
+  const leftHip =
+    landmarks[23];
+
+  const rightHip =
+    landmarks[24];
+
+
+  const leftAnkle =
+    landmarks[27];
+
+  const rightAnkle =
+    landmarks[28];
+
+
+  const leftHeel =
+    landmarks[29];
+
+  const rightHeel =
+    landmarks[30];
+
+
+  const leftFoot =
+    landmarks[31];
+
+  const rightFoot =
+    landmarks[32];
+
+
+  /*
+    UPPER BODY CHECK
+  */
+
+  const headVisible =
+    isVisible(nose);
+
+
+  const shouldersVisible =
+    isVisible(leftShoulder) &&
+    isVisible(rightShoulder);
+
+
+  const hipsVisible =
+    isVisible(leftHip) &&
+    isVisible(rightHip);
+
+
+  const upperBodyOK =
+    headVisible &&
+    shouldersVisible &&
+    hipsVisible;
+
+
+  /*
+    FOOT CHECK
+
+    Kita tidak bergantung pada satu titik sahaja.
+
+    Setiap kaki dianggap kelihatan jika sekurang-
+    kurangnya dua daripada ankle / heel / foot index
+    mempunyai visibility yang baik.
+  */
+
+  const leftFootPoints = [
+
+    leftAnkle,
+    leftHeel,
+    leftFoot
+
+  ].filter(
+
+    point =>
+      isVisible(point)
+
+  ).length;
+
+
+  const rightFootPoints = [
+
+    rightAnkle,
+    rightHeel,
+    rightFoot
+
+  ].filter(
+
+    point =>
+      isVisible(point)
+
+  ).length;
+
+
+  const leftFootOK =
+    leftFootPoints >= 2;
+
+
+  const rightFootOK =
+    rightFootPoints >= 2;
+
+
+  const feetOK =
+    leftFootOK &&
+    rightFootOK;
+
+
+  /*
+    FRAMING CHECK
+
+    Beri sedikit ruang di atas kepala
+    dan bawah kaki.
+
+    Ini bukan ukuran biomekanik.
+    Ia hanya quality check kamera.
+  */
+
+  let topY =
+    nose.y;
+
+
+  const visibleFootY = [
+
+    leftAnkle,
+    rightAnkle,
+    leftHeel,
+    rightHeel,
+    leftFoot,
+    rightFoot
+
+  ]
+
+  .filter(
+    point => isVisible(point)
+  )
+
+  .map(
+    point => point.y
+  );
+
+
+  let bottomY = 1;
+
+
+  if (
+    visibleFootY.length > 0
+  ) {
+
+    bottomY =
+      Math.max(
+        ...visibleFootY
+      );
+
+  }
+
+
+  /*
+    Jika kepala terlalu dekat bahagian atas
+    atau kaki terlalu dekat bahagian bawah,
+    pemanah mungkin terlalu memenuhi frame.
+  */
+
+  const topMarginOK =
+    topY > 0.025;
+
+
+  const bottomMarginOK =
+    bottomY < 0.975;
+
+
+  const marginOK =
+    topMarginOK &&
+    bottomMarginOK;
+
+
+  /*
+    Tentukan status utama.
+  */
+
+  let newState;
+
+
+  if (!upperBodyOK) {
+
+    newState =
+      "UPPER_MISSING";
+
+  }
+
+  else if (!feetOK) {
+
+    newState =
+      "FEET_MISSING";
+
+  }
+
+  else if (!marginOK) {
+
+    newState =
+      "TOO_CLOSE";
+
+  }
+
+  else {
+
+    newState =
+      "READY";
+
+  }
+
+
+  updateStableSetupState(
+    newState
+  );
+
+}
+
+
+/* =========================================
+   STABILITY FILTER
+   ========================================= */
+
+function updateStableSetupState(
+  newState
+) {
+
+  if (
+    pendingSetupState === newState
+  ) {
+
+    setupStateFrames++;
+
+  }
+
+  else {
+
+    pendingSetupState =
+      newState;
+
+    setupStateFrames =
+      1;
+
+  }
+
+
+  /*
+    Jangan tukar arahan kerana
+    satu frame sahaja.
+  */
+
+  if (
+
+    setupStateFrames <
+    REQUIRED_STABLE_FRAMES
+
+  ) {
+
+    return;
+
+  }
+
+
+  if (
+    stableSetupState === newState
+  ) {
+
+    return;
+
+  }
+
+
+  stableSetupState =
+    newState;
+
+
+  renderSetupState(
+    newState
+  );
+
+}
+
+
+/* =========================================
+   DISPLAY SMART SETUP STATUS
+   ========================================= */
+
+function renderSetupState(
+  state
+) {
+
+  if (
+    state === "NO_PERSON"
+  ) {
+
+    statusText.textContent =
+      "Mencari pemanah...";
+
+
+    setupMessage.textContent =
+      "Berdiri di hadapan kamera.";
+
+
+    setDot("warning");
+
+
+    setCheck(
+      personCheck,
+      "Tidak dikesan",
+      "warn"
+    );
+
+
+    setCheck(
+      upperCheck,
+      "—",
+      "warn"
+    );
+
+
+    setCheck(
+      feetCheck,
+      "—",
+      "warn"
+    );
+
+
+    setCheck(
+      frameCheck,
+      "—",
+      "warn"
+    );
+
+
+    return;
+
+  }
+
+
+  if (
+    state === "UPPER_MISSING"
+  ) {
+
+    statusText.textContent =
+      "Pemanah dikesan";
+
+
+    setupMessage.textContent =
+      "Pastikan kepala dan seluruh badan berada dalam kamera.";
+
+
+    setDot("warning");
+
+
+    setCheck(
+      personCheck,
+      "Dikesan ✓",
+      "good"
+    );
+
+
+    setCheck(
+      upperCheck,
+      "Tidak lengkap",
+      "warn"
+    );
+
+
+    setCheck(
+      feetCheck,
+      "Semak posisi",
+      "warn"
+    );
+
+
+    setCheck(
+      frameCheck,
+      "Belum sesuai",
+      "warn"
+    );
+
+
+    return;
+
+  }
+
+
+  if (
+    state === "FEET_MISSING"
+  ) {
+
+    statusText.textContent =
+      "Pemanah dikesan";
+
+
+    setupMessage.textContent =
+      "Pastikan kedua-dua kaki berada dalam frame.";
+
+
+    setDot("warning");
+
+
+    setCheck(
+      personCheck,
+      "Dikesan ✓",
+      "good"
+    );
+
+
+    setCheck(
+      upperCheck,
+      "Lengkap ✓",
+      "good"
+    );
+
+
+    setCheck(
+      feetCheck,
+      "Tidak lengkap",
+      "warn"
+    );
+
+
+    setCheck(
+      frameCheck,
+      "Undur sedikit",
+      "warn"
+    );
+
+
+    return;
+
+  }
+
+
+  if (
+    state === "TOO_CLOSE"
+  ) {
+
+    statusText.textContent =
+      "Pemanah dikesan";
+
+
+    setupMessage.textContent =
+      "Undur sedikit supaya terdapat ruang di sekeliling badan.";
+
+
+    setDot("warning");
+
+
+    setCheck(
+      personCheck,
+      "Dikesan ✓",
+      "good"
+    );
+
+
+    setCheck(
+      upperCheck,
+      "Lengkap ✓",
+      "good"
+    );
+
+
+    setCheck(
+      feetCheck,
+      "Lengkap ✓",
+      "good"
+    );
+
+
+    setCheck(
+      frameCheck,
+      "Terlalu rapat",
+      "warn"
+    );
+
+
+    return;
+
+  }
+
+
+  if (
+    state === "READY"
+  ) {
+
+    statusText.textContent =
+      "Kedudukan kamera sesuai ✓";
+
+
+    setupMessage.textContent =
+      "Badan penuh dikesan. BowSense bersedia untuk analisis.";
+
+
+    setDot("");
+
+
+    setCheck(
+      personCheck,
+      "Dikesan ✓",
+      "good"
+    );
+
+
+    setCheck(
+      upperCheck,
+      "Lengkap ✓",
+      "good"
+    );
+
+
+    setCheck(
+      feetCheck,
+      "Lengkap ✓",
+      "good"
+    );
+
+
+    setCheck(
+      frameCheck,
+      "Sesuai ✓",
+      "good"
+    );
+
+  }
+
+}
+
+
+/* =========================================
+   START
    ========================================= */
 
 loadPoseAI();
